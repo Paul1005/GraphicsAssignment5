@@ -339,8 +339,8 @@ namespace asgn5v1
             {
                 //create the screen coordinates:
                 //scrnpts = vertices*ctrans
-                double height = this.Size.Height / 2;
-                double width = this.Size.Width / 2;
+                double height = Height / 2;
+                double width = Width / 2;
                 double minY = Double.MaxValue;
                 double maxY = Double.MinValue;
                 double minX = Double.MaxValue;
@@ -353,6 +353,7 @@ namespace asgn5v1
                         for (k = 0; k < 4; k++)
                             temp += vertices[i, k] * ctrans[k, j];
                         scrnpts[i, j] = temp;
+
                         if (j == 1)
                         {
                             if (scrnpts[i, j] > maxY)
@@ -384,10 +385,10 @@ namespace asgn5v1
                 for (int i = 0; i < numlines; i++)
                 {
                     grfx.DrawLine(pen,
-                        (int)ratio * (int)scrnpts[lines[i, 0], 0] + (int)width - (int)shapeWidth/2*(int)ratio,
-                        (int)ratio * (int)scrnpts[lines[i, 0], 1] + (int)height / 2,
-                        (int)ratio * (int)scrnpts[lines[i, 1], 0] + (int)width - (int)shapeWidth/2*(int)ratio,
-                        (int)ratio * (int)scrnpts[lines[i, 1], 1] + (int)height / 2);
+                        (float)(ratio * scrnpts[lines[i, 0], 0] + width - shapeWidth/2*ratio),
+                        (float)(height-(ratio * scrnpts[lines[i, 0], 1] - height/2)),
+                        (float)(ratio * scrnpts[lines[i, 1], 0] + width - shapeWidth/2*ratio),
+                        (float)(height-(ratio * scrnpts[lines[i, 1], 1] - height/2)));
                 }
             } // end of gooddata block	
         } // end of OnPaint
@@ -505,7 +506,8 @@ namespace asgn5v1
         {
             for (int i = 0; i < nrow; i++)
             {
-                for (int j = 0; j < ncol; j++) A[i, j] = 0.0d;
+                for (int j = 0; j < ncol; j++)
+                    A[i, j] = 0.0d;
                 A[i, i] = 1.0d;
             }
         }// end of setIdentity
@@ -589,11 +591,6 @@ namespace asgn5v1
             {
                 Close();
             }
-
         }
-
-
     }
-
-
 }

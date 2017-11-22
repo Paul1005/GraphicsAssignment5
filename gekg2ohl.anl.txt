@@ -1,0 +1,22 @@
+﻿
+# Please enter the commit message for your changes. Lines starting
+# with '#' will be ignored, and an empty message aborts the commit.
+# On branch master
+# Your branch is up-to-date with 'origin/master'.
+#
+# Changes to be committed:
+#	new file:   asgn5student/AboutDialogBox.cs
+#	new file:   asgn5student/AboutDialogBox.resx
+#	new file:   asgn5student/App.ico
+#	new file:   asgn5student/AssemblyInfo.cs
+#	new file:   asgn5student/Form1.cs
+#	new file:   asgn5student/Form1.resx
+#	new file:   asgn5student/Test Shape/Qlines.200810.dat
+#	new file:   asgn5student/Test Shape/Qlines3D.200810.dat
+#	new file:   asgn5student/Test Shape/Qpoints.200810.dat
+#	new file:   asgn5student/Test Shape/Qpoints3D.200810.dat
+#	new file:   asgn5student/asgn5FullDemo.exe
+#	new file:   asgn5student/asgn5v1.csproj
+#	new file:   asgn5student/asgn5v1.sln
+#
+
