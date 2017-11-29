@@ -6,6 +6,7 @@ using System.Windows.Forms;
 using System.Data;
 using System.IO;
 using System.Text;
+using System.Diagnostics;
 
 namespace asgn5v1
 {
@@ -339,12 +340,7 @@ namespace asgn5v1
             {
                 //create the screen coordinates:
                 //scrnpts = vertices*ctrans
-                double height = Height / 2;
-                double width = Width / 2;
-                double minY = Double.MaxValue;
-                double maxY = Double.MinValue;
-                double minX = Double.MaxValue;
-                double maxX = Double.MinValue;
+
                 for (int i = 0; i < numpts; i++)
                 {
                     for (int j = 0; j < 4; j++)
@@ -353,42 +349,17 @@ namespace asgn5v1
                         for (k = 0; k < 4; k++)
                             temp += vertices[i, k] * ctrans[k, j];
                         scrnpts[i, j] = temp;
-
-                        if (j == 1)
-                        {
-                            if (scrnpts[i, j] > maxY)
-                            {
-                                maxY = scrnpts[i, j];
-                            }
-                            if (scrnpts[i, j] < minY)
-                            {
-                                minY = scrnpts[i, j];
-                            }
-                        } else if (j == 0)
-                        {
-                            if (scrnpts[i, j] > maxX)
-                            {
-                                maxX = scrnpts[i, j];
-                            }
-                            if (scrnpts[i, j] < minX)
-                            {
-                                minX = scrnpts[i, j];
-                            }
-                        }
                     }
                 }
 
                 //now draw the lines
-                double shapeWidth = maxX - minX;
-                double shapeHeight = maxY - minY;
-                double ratio = height / shapeHeight;
                 for (int i = 0; i < numlines; i++)
                 {
                     grfx.DrawLine(pen,
-                        (float)(ratio * scrnpts[lines[i, 0], 0] + width - shapeWidth/2*ratio),
-                        (float)(height-(ratio * scrnpts[lines[i, 0], 1] - height/2)),
-                        (float)(ratio * scrnpts[lines[i, 1], 0] + width - shapeWidth/2*ratio),
-                        (float)(height-(ratio * scrnpts[lines[i, 1], 1] - height/2)));
+                        (float)(scrnpts[lines[i, 0], 0]),
+                        (float)(scrnpts[lines[i, 0], 1]),
+                        (float)(scrnpts[lines[i, 1], 0]),
+                        (float)(scrnpts[lines[i, 1], 1]));
                 }
             } // end of gooddata block	
         } // end of OnPaint
@@ -504,12 +475,79 @@ namespace asgn5v1
 
         void setIdentity(double[,] A, int nrow, int ncol)
         {
+            double height = Height / 2;
+            double width = Width / 2;
+            double minY = Double.MaxValue;
+            double maxY = Double.MinValue;
+            double minX = Double.MaxValue;
+            double maxX = Double.MinValue;
+
+            for (int i = 0; i < numpts; i++)
+            {
+                for (int j = 0; j < 4; j++)
+                {
+                    if (j == 1)
+                    {
+                        if (vertices[i, j] > maxY)
+                        {
+                            maxY = vertices[i, j];
+                        }
+                        if (vertices[i, j] < minY)
+                        {
+                            minY = vertices[i, j];
+                        }
+                    }
+                    else if (j == 0)
+                    {
+                        if (vertices[i, j] > maxX)
+                        {
+                            maxX = vertices[i, j];
+                        }
+                        if (vertices[i, j] < minX)
+                        {
+                            minX = vertices[i, j];
+                        }
+                    }
+                }
+            }
+            double shapeWidth = maxX - minX;
+            double shapeHeight = maxY - minY;
+            double ratio = height / shapeHeight;
+
             for (int i = 0; i < nrow; i++)
             {
                 for (int j = 0; j < ncol; j++)
-                    A[i, j] = 0.0d;
-                A[i, i] = 1.0d;
+                {
+                    if (i == j)
+                    {
+                        if (i < nrow - 1)
+                        {
+                            A[i, j] = ratio;
+                        }
+                        else
+                        {
+                            A[i, j] = 1.0d;
+                        }
+                    }
+                    else if (i == nrow - 1)
+                    {
+                        if (j == 0)
+                        {
+                            A[i, j] = width - (shapeWidth / 2) * ratio;
+                        }
+                        else if (j == 1)
+                        {
+                            A[i, j] = height - (shapeHeight / 2) * ratio;
+                        }
+                    }
+                    else
+                    {
+                        A[i, j] = 0.0d;
+                    }
+                }
             }
+
+
         }// end of setIdentity
 
 
