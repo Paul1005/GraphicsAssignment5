@@ -339,7 +339,7 @@ namespace asgn5v1
             if (gooddata)
             {
                 //create the screen coordinates:
-                //scrnpts = vertices*ctrans
+                // scrnpts = vertices*ctrans
 
                 for (int i = 0; i < numpts; i++)
                 {
@@ -347,19 +347,24 @@ namespace asgn5v1
                     {
                         temp = 0.0d;
                         for (k = 0; k < 4; k++)
+                        {
                             temp += vertices[i, k] * ctrans[k, j];
+                            //Debug.Write(vertices[i, k] + " " + ctrans[k, j] + "\n");
+                        }
                         scrnpts[i, j] = temp;
                     }
+                    //Debug.Write("\n");
                 }
 
                 //now draw the lines
+
                 for (int i = 0; i < numlines; i++)
                 {
                     grfx.DrawLine(pen,
-                        (float)(scrnpts[lines[i, 0], 0]),
-                        (float)(scrnpts[lines[i, 0], 1]),
-                        (float)(scrnpts[lines[i, 1], 0]),
-                        (float)(scrnpts[lines[i, 1], 1]));
+                        (int)scrnpts[lines[i, 0], 0],
+                        (int)scrnpts[lines[i, 0], 1],
+                        (int)scrnpts[lines[i, 1], 0],
+                        (int)scrnpts[lines[i, 1], 1]);
                 }
             } // end of gooddata block	
         } // end of OnPaint
@@ -434,7 +439,7 @@ namespace asgn5v1
                 return false;
             }
             scrnpts = new double[numpts, 4];
-            setIdentity(ctrans, 4, 4);  //initialize transformation matrix to identity
+            setIdentity(ref ctrans, 4, 4);  //initialize transformation matrix to identity
             return true;
         } // end of GetNewData
 
@@ -473,7 +478,7 @@ namespace asgn5v1
             }
         } // end of DecodeLines
 
-        void setIdentity(double[,] A, int nrow, int ncol)
+        void setIdentity(ref double[,] A, int nrow, int ncol)
         {
             double height = Height / 2;
             double width = Width / 2;
@@ -510,44 +515,49 @@ namespace asgn5v1
                     }
                 }
             }
+
             double shapeWidth = maxX - minX;
             double shapeHeight = maxY - minY;
             double ratio = height / shapeHeight;
+            double translateX = width - (shapeWidth / 2) * ratio;
+            double translateY = height - (shapeHeight / 2) * ratio;
 
+            double[,] translate =
+                {
+                    { 1,0,0,0},
+                    { 0,1,0,0},
+                    { 0,0,1,0},
+                    { translateX,translateY,0,1}
+                };
+
+            double[,] scale =
+                {
+                    { ratio,0,0,0},
+                    { 0,ratio,0,0},
+                    { 0,0,ratio,0},
+                    { 0,0,0,1}
+                };
+            A = matrixMultiplication(scale, translate, nrow, ncol);
+        }// end of setIdentity
+
+        private double[,] matrixMultiplication(double[,] matrix1, double[,] matrix2, int nrow, int ncol)
+        {
+            double temp;
+            double[,] resultMatrix = new double[4, 4];
             for (int i = 0; i < nrow; i++)
             {
                 for (int j = 0; j < ncol; j++)
                 {
-                    if (i == j)
-                    {
-                        if (i < nrow - 1)
-                        {
-                            A[i, j] = ratio;
-                        }
-                        else
-                        {
-                            A[i, j] = 1.0d;
-                        }
-                    }
-                    else if (i == nrow - 1)
-                    {
-                        if (j == 0)
-                        {
-                            A[i, j] = width - (shapeWidth / 2) * ratio;
-                        }
-                        else if (j == 1)
-                        {
-                            A[i, j] = height - (shapeHeight / 2) * ratio;
-                        }
-                    }
-                    else
-                    {
-                        A[i, j] = 0.0d;
-                    }
+                    temp = 0.0d;
+                    for (int k = 0; k < 4; k++)
+                        temp += matrix1[i, k] * matrix2[k, j];
+                    resultMatrix[i, j] = temp;
+                    //Debug.Write(temp + " ");
                 }
+                //Debug.Write("\n");
             }
-        }// end of setIdentity
-
+            return resultMatrix;
+        }
 
         private void Transformer_Load(object sender, System.EventArgs e)
         {
@@ -558,34 +568,72 @@ namespace asgn5v1
         {
             if (e.Button == transleftbtn)
             {
-                ctrans[3, 0] -= 75;
+                double[,] translate =
+                {
+                    { 1,0,0,0},
+                    { 0,1,0,0},
+                    { 0,0,1,0},
+                    { -75,0,0,1}
+                };
+                ctrans = matrixMultiplication(ctrans, translate, 4, 4);
                 Refresh();
             }
             if (e.Button == transrightbtn)
             {
-                ctrans[3, 0] += 75;
+                double[,] translate =
+               {
+                    { 1,0,0,0},
+                    { 0,1,0,0},
+                    { 0,0,1,0},
+                    { 75,0,0,1}
+                };
+                ctrans = matrixMultiplication(ctrans, translate, 4, 4);
                 Refresh();
             }
             if (e.Button == transupbtn)
             {
-                ctrans[3, 1] -= 35;
+                double[,] translate =  
+                {
+                    { 1,0,0,0},
+                    { 0,1,0,0},
+                    { 0,0,1,0},
+                    { 0,-35,0,1}
+                };
+                ctrans = matrixMultiplication(ctrans, translate, 4, 4);
                 Refresh();
             }
 
             if (e.Button == transdownbtn)
             {
-                ctrans[3, 1] += 35;
+                double[,] translate =
+                   {
+                    { 1,0,0,0},
+                    { 0,1,0,0},
+                    { 0,0,1,0},
+                    { 0,35,0,1}
+                };
+                ctrans = matrixMultiplication(ctrans, translate, 4, 4);
                 Refresh();
             }
             if (e.Button == scaleupbtn)
             {
-                double scale = ctrans[0, 0] * 0.1;
-                for (int i = 0; i < 3; i++)
+                double[,] scale =
                 {
-                    ctrans[i, i] += scale;
-                }
-                ctrans[3, 0] -= (Height / 4) / ((Height / 4) / (scale*10));
-                ctrans[3, 1] -= (Height / 4) / ((Height / 4) / (scale*10));
+                    { 1.1,0,0,0},
+                    { 0,1.1,0,0},
+                    { 0,0,1.1,0},
+                    { 0,0,0,1}
+                };
+
+                double[,] translate =
+                {
+                    { 1,0,0,0},
+                    { 0,1,0,0},
+                    { 0,0,1,0},
+                    { -(ctrans[3,0]+),-(ctrans[3,0]),0,1}
+                };
+
+                ctrans = matrixMultiplication(ctrans, scale, 4, 4);
                 Refresh();
             }
             if (e.Button == scaledownbtn)
