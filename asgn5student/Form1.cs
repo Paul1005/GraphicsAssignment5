@@ -546,8 +546,6 @@ namespace asgn5v1
                     }
                 }
             }
-
-
         }// end of setIdentity
 
 
@@ -560,27 +558,45 @@ namespace asgn5v1
         {
             if (e.Button == transleftbtn)
             {
+                ctrans[3, 0] -= 75;
                 Refresh();
             }
             if (e.Button == transrightbtn)
             {
+                ctrans[3, 0] += 75;
                 Refresh();
             }
             if (e.Button == transupbtn)
             {
+                ctrans[3, 1] -= 35;
                 Refresh();
             }
 
             if (e.Button == transdownbtn)
             {
+                ctrans[3, 1] += 35;
                 Refresh();
             }
             if (e.Button == scaleupbtn)
             {
+                double scale = ctrans[0, 0] * 0.1;
+                for (int i = 0; i < 3; i++)
+                {
+                    ctrans[i, i] += scale;
+                }
+                ctrans[3, 0] -= (Height / 4) / ((Height / 4) / (scale*10));
+                ctrans[3, 1] -= (Height / 4) / ((Height / 4) / (scale*10));
                 Refresh();
             }
             if (e.Button == scaledownbtn)
             {
+                double scale = ctrans[0, 0] * 0.1;
+                for (int i = 0; i < 3; i++)
+                {
+                    ctrans[i, i] -= scale;
+                }
+                ctrans[3, 0] += (Height / 4) / ((Height / 4) / (scale * 10));
+                ctrans[3, 1] += (Height / 4) / ((Height / 4) / (scale * 10));
                 Refresh();
             }
             if (e.Button == rotxby1btn)
