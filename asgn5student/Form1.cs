@@ -50,7 +50,9 @@ namespace asgn5v1
         private System.Windows.Forms.ToolBarButton resetbtn;
         private System.Windows.Forms.ToolBarButton exitbtn;
         int[,] lines;
-
+        double[] center;
+        double[] origcenter = new double[3];
+        double[,] origtrans = new double[4, 4];
         public Transformer()
         {
             //
@@ -390,6 +392,10 @@ namespace asgn5v1
         void RestoreInitialImage()
         {
             Invalidate();
+            ctrans = origtrans;
+            center[0] = origcenter[0];
+            center[1] = origcenter[1];
+            center[2] = origcenter[2];
         } // end of RestoreInitialImage
 
         bool GetNewData()
@@ -439,7 +445,7 @@ namespace asgn5v1
                 return false;
             }
             scrnpts = new double[numpts, 4];
-            setIdentity(ref ctrans, 4, 4);  //initialize transformation matrix to identity
+            setIdentity();  //initialize transformation matrix to identity
             return true;
         } // end of GetNewData
 
@@ -478,67 +484,171 @@ namespace asgn5v1
             }
         } // end of DecodeLines
 
-        void setIdentity(ref double[,] A, int nrow, int ncol)
+        void setIdentity()
         {
-            double height = Height / 2;
-            double width = Width / 2;
-            double minY = Double.MaxValue;
-            double maxY = Double.MinValue;
-            double minX = Double.MaxValue;
-            double maxX = Double.MinValue;
-
-            for (int i = 0; i < numpts; i++)
+            for (int i = 0; i < 4; i++)
             {
                 for (int j = 0; j < 4; j++)
                 {
-                    if (j == 1)
-                    {
-                        if (vertices[i, j] > maxY)
-                        {
-                            maxY = vertices[i, j];
-                        }
-                        if (vertices[i, j] < minY)
-                        {
-                            minY = vertices[i, j];
-                        }
-                    }
-                    else if (j == 0)
-                    {
-                        if (vertices[i, j] > maxX)
-                        {
-                            maxX = vertices[i, j];
-                        }
-                        if (vertices[i, j] < minX)
-                        {
-                            minX = vertices[i, j];
-                        }
-                    }
+                    ctrans[i, j] = 0.0d;
                 }
+                ctrans[i, i] = 1.0d;
             }
 
-            double shapeWidth = maxX - minX;
-            double shapeHeight = maxY - minY;
-            double ratio = height / shapeHeight;
-            double translateX = width - (shapeWidth / 2) * ratio;
-            double translateY = height - (shapeHeight / 2) * ratio;
+            double height = Height / 2;
+            double width = Width / 2;
 
+            MinMax minMax = findMinMax(vertices);
+            center = FindCenter(minMax);
+
+            translate(-center[0], -center[1], -center[2]);
+
+            double shapeWidth = minMax.maxX - minMax.minX;
+            double shapeHeight = minMax.maxY - minMax.minY;
+            double shapeDepth = minMax.maxZ - minMax.minZ;
+            double ratio = height / shapeHeight;
+
+            scale(ratio, ratio, ratio);
+
+            translate(width, height, 0);
+            origtrans = ctrans;
+
+            origcenter[0] = center[0];
+            origcenter[1] = center[1];
+            origcenter[2] = center[2];
+        }// end of setIdentity
+
+        private void translate(double x, double y, double z)
+        {
             double[,] translate =
                 {
                     { 1,0,0,0},
                     { 0,1,0,0},
                     { 0,0,1,0},
-                    { translateX,translateY,0,1}
+                    { x,y,z,1}
                 };
 
+            center[0] += x;
+            center[1] += y;
+            center[2] += z;
+
+            ctrans = matrixMultiplication(ctrans, translate, 4, 4);
+        }
+
+        private void scale(double scaleX, double scaleY, double scaleZ)
+        {
             double[,] scale =
-                {
-                    { ratio,0,0,0},
-                    { 0,ratio,0,0},
-                    { 0,0,ratio,0},
+            {
+                    { scaleX,0,0,0},
+                    { 0,scaleY,0,0},
+                    { 0,0,scaleZ,0},
                     { 0,0,0,1}
-                };
-            A = matrixMultiplication(scale, translate, nrow, ncol);
-        }// end of setIdentity
+            };
+            ctrans = matrixMultiplication(ctrans, scale, 4, 4);
+        }
+
+        private void RotateX(double rotateX)
+        {
+            double[,] rotation =
+            {
+                    { 1,0,0,0},
+                    { 0,Math.Cos(rotateX),Math.Sin(rotateX),0},
+                    { 0,-Math.Sin(rotateX),Math.Cos(rotateX),0},
+                    { 0,0,0,1}
+            };
+            ctrans = matrixMultiplication(ctrans, rotation, 4, 4);
+        }
+        private void RotateY(double rotateY)
+        {
+            double[,] scale =
+            {
+                    { Math.Cos(rotateY),0,-Math.Sin(rotateY),0},
+                    { 0,1,0,0},
+                    { Math.Sin(rotateY),0,Math.Cos(rotateY),0},
+                    { 0,0,0,1}
+            };
+            ctrans = matrixMultiplication(ctrans, scale, 4, 4);
+        }
+        private void RotateZ(double rotateZ)
+        {
+            double[,] scale =
+            {
+                    { Math.Cos(rotateZ),Math.Sin(rotateZ),0,0},
+                    { -Math.Sin(rotateZ),Math.Cos(rotateZ),0,0},
+                    { 0,0,0,0},
+                    { 0,0,0,1}
+            };
+            ctrans = matrixMultiplication(ctrans, scale, 4, 4);
+        }
+
+        private void Shear(double shxy)
+        {
+            double[,] scale =
+            {
+                    { 1,shxy,0,0},
+                    { 0,1,0,0},
+                    { 0,0,1,0},
+                    { 0,0,0,1}
+            };
+            ctrans = matrixMultiplication(ctrans, scale, 4, 4);
+        }
+        private double[] FindCenter(MinMax minMax)
+        {
+
+            double centerX = (minMax.minX + minMax.maxX) / 2;
+            double centerY = (minMax.minY + minMax.maxY) / 2;
+            double centerZ = (minMax.minZ + minMax.maxZ) / 2;
+            double[] array = { centerX, centerY, centerZ };
+            return array;
+        }
+
+        private MinMax findMinMax(double[,] V)
+        {
+            MinMax output = new MinMax();
+
+            for (int i = 0; i < numpts; i++)
+            {
+                for (int j = 0; j < 4; j++)
+                {
+                    if (j == 0)
+                    {
+                        if (V[i, j] > output.maxX)
+                        {
+                            output.maxX = V[i, j];
+                        }
+                        if (V[i, j] < output.minX)
+                        {
+                            output.minX = V[i, j];
+                        }
+                    }
+                    else if (j == 1)
+                    {
+                        if (V[i, j] > output.maxY)
+                        {
+                            output.maxY = V[i, j];
+                        }
+                        if (V[i, j] < output.minY)
+                        {
+                            output.minY = V[i, j];
+                        }
+                    }
+                    else if (j == 2)
+                    {
+                        if (V[i, j] > output.maxZ)
+                        {
+                            output.maxZ = V[i, j];
+                        }
+                        if (V[i, j] < output.minZ)
+                        {
+                            output.minZ = V[i, j];
+                        }
+                    }
+                }
+            }
+
+            return output;
+        }
+
 
         private double[,] matrixMultiplication(double[,] matrix1, double[,] matrix2, int nrow, int ncol)
         {
@@ -550,12 +660,16 @@ namespace asgn5v1
                 {
                     temp = 0.0d;
                     for (int k = 0; k < 4; k++)
+                    {
                         temp += matrix1[i, k] * matrix2[k, j];
+                        Debug.Write(matrix1[i, k] + " " + matrix2[k, j] + " \n");
+                    }
                     resultMatrix[i, j] = temp;
-                    //Debug.Write(temp + " ");
+                    //  Debug.Write(temp + " ");
                 }
-                //Debug.Write("\n");
+                Debug.Write("\n");
             }
+            Debug.Write("\n");
             return resultMatrix;
         }
 
@@ -568,119 +682,123 @@ namespace asgn5v1
         {
             if (e.Button == transleftbtn)
             {
-                double[,] translate =
-                {
-                    { 1,0,0,0},
-                    { 0,1,0,0},
-                    { 0,0,1,0},
-                    { -75,0,0,1}
-                };
-                ctrans = matrixMultiplication(ctrans, translate, 4, 4);
+                translate(-75, 0, 0);
                 Refresh();
             }
             if (e.Button == transrightbtn)
             {
-                double[,] translate =
-               {
-                    { 1,0,0,0},
-                    { 0,1,0,0},
-                    { 0,0,1,0},
-                    { 75,0,0,1}
-                };
-                ctrans = matrixMultiplication(ctrans, translate, 4, 4);
+                translate(75, 0, 0);
                 Refresh();
             }
             if (e.Button == transupbtn)
             {
-                double[,] translate =  
-                {
-                    { 1,0,0,0},
-                    { 0,1,0,0},
-                    { 0,0,1,0},
-                    { 0,-35,0,1}
-                };
-                ctrans = matrixMultiplication(ctrans, translate, 4, 4);
+                translate(0, -35, 0);
                 Refresh();
             }
 
             if (e.Button == transdownbtn)
             {
-                double[,] translate =
-                   {
-                    { 1,0,0,0},
-                    { 0,1,0,0},
-                    { 0,0,1,0},
-                    { 0,35,0,1}
-                };
-                ctrans = matrixMultiplication(ctrans, translate, 4, 4);
+                translate(0, 35, 0);
                 Refresh();
             }
             if (e.Button == scaleupbtn)
             {
-                double[,] scale =
-                {
-                    { 1.1,0,0,0},
-                    { 0,1.1,0,0},
-                    { 0,0,1.1,0},
-                    { 0,0,0,1}
-                };
-
-                double[,] translate =
-                {
-                    { 1,0,0,0},
-                    { 0,1,0,0},
-                    { 0,0,1,0},
-                    { -(ctrans[3,0]+),-(ctrans[3,0]),0,1}
-                };
-
-                ctrans = matrixMultiplication(ctrans, scale, 4, 4);
+                double[] currentCenter = { center[0], center[1], center[2] };
+                translate(-center[0], -center[1], -center[2]);
+                scale(1.1, 1.1, 1.1);
+                translate(currentCenter[0], currentCenter[1], currentCenter[2]);
                 Refresh();
             }
             if (e.Button == scaledownbtn)
             {
-                double scale = ctrans[0, 0] * 0.1;
-                for (int i = 0; i < 3; i++)
-                {
-                    ctrans[i, i] -= scale;
-                }
-                ctrans[3, 0] += (Height / 4) / ((Height / 4) / (scale * 10));
-                ctrans[3, 1] += (Height / 4) / ((Height / 4) / (scale * 10));
+                double[] currentCenter = { center[0], center[1], center[2] };
+                translate(-center[0], -center[1], -center[2]);
+                scale(0.9, 0.9, 0.9);
+                translate(currentCenter[0], currentCenter[1], currentCenter[2]);
                 Refresh();
             }
             if (e.Button == rotxby1btn)
             {
-
+                double[] currentCenter = { center[0], center[1], center[2] };
+                translate(-center[0], -center[1], -center[2]);
+                RotateX(0.05);
+                translate(currentCenter[0], currentCenter[1], currentCenter[2]);
+                Refresh();
             }
             if (e.Button == rotyby1btn)
             {
-
+                double[] currentCenter = { center[0], center[1], center[2] };
+                translate(-center[0], -center[1], -center[2]);
+                RotateY(0.05);
+                translate(currentCenter[0], currentCenter[1], currentCenter[2]);
+                Refresh();
             }
             if (e.Button == rotzby1btn)
             {
-
+                double[] currentCenter = { center[0], center[1], center[2] };
+                translate(-center[0], -center[1], -center[2]);
+                RotateZ(0.05);
+                translate(currentCenter[0], currentCenter[1], currentCenter[2]);
+                Refresh();
             }
 
             if (e.Button == rotxbtn)
             {
 
+                while (true)
+                {
+                    double[] currentCenter = { center[0], center[1], center[2] };
+                    translate(-center[0], -center[1], -center[2]);
+                    RotateX(0.05);
+                    translate(currentCenter[0], currentCenter[1], currentCenter[2]);
+                    Refresh();
+                }
             }
             if (e.Button == rotybtn)
             {
-
+                while (true)
+                {
+                    double[] currentCenter = { center[0], center[1], center[2] };
+                    translate(-center[0], -center[1], -center[2]);
+                    RotateY(0.05);
+                    translate(currentCenter[0], currentCenter[1], currentCenter[2]);
+                    Refresh();
+                }
             }
 
             if (e.Button == rotzbtn)
             {
-
+                while (true)
+                {
+                    double[] currentCenter = { center[0], center[1], center[2] };
+                    translate(-center[0], -center[1], -center[2]);
+                    RotateZ(0.05);
+                    translate(currentCenter[0], currentCenter[1], currentCenter[2]);
+                    Refresh();
+                }
             }
 
             if (e.Button == shearleftbtn)
             {
+
+                double[] currentCenter = { center[0], center[1], center[2] };
+                translate(-center[0], -center[1], -center[2]);
+
+                Shear(-0.1);
+                translate(currentCenter[0], currentCenter[1], currentCenter[2]);
+                Refresh();
                 Refresh();
             }
 
             if (e.Button == shearrightbtn)
             {
+
+                double[] currentCenter = { center[0], center[1], center[2] };
+                translate(-center[0], -center[1], -center[2]);
+
+                Shear(0.1);
+                translate(currentCenter[0], currentCenter[1], currentCenter[2]);
+                Refresh();
                 Refresh();
             }
 
