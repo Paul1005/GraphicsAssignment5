@@ -19,9 +19,9 @@ namespace asgn5v1
         private System.ComponentModel.IContainer components;
         //private bool GetNewData();
 
-        System.Timers.Timer rotRptX = new System.Timers.Timer(600);
-        System.Timers.Timer rotRptY = new System.Timers.Timer(600);
-        System.Timers.Timer rotRptZ = new System.Timers.Timer(600);
+        System.Timers.Timer rotRptX = new System.Timers.Timer(200);
+        System.Timers.Timer rotRptY = new System.Timers.Timer(200);
+        System.Timers.Timer rotRptZ = new System.Timers.Timer(200);
 
         private delegate void delegateMethod();
 
@@ -540,6 +540,7 @@ namespace asgn5v1
             center = FindCenter(minMax);
 
             translate(-center[0], -center[1], -center[2]);
+            reflectY();
 
             double shapeWidth = minMax.maxX - minMax.minX;
             double shapeHeight = minMax.maxY - minMax.minY;
@@ -555,6 +556,19 @@ namespace asgn5v1
             origcenter[1] = center[1];
             origcenter[2] = center[2];
         }// end of setIdentity
+
+        private void reflectY()
+        {
+            double[,] translate =
+                {
+                    { 1,0,0,0},
+                    { 0,-1,0,0},
+                    { 0,0,1,0},
+                    { 0,0,0,1}
+                };
+
+            ctrans = matrixMultiplication(ctrans, translate, 4, 4);
+        }
 
         private void translate(double x, double y, double z)
         {
@@ -624,7 +638,7 @@ namespace asgn5v1
             double[,] scale =
             {
                     { 1,0,0,0},
-                    { shxy,1,0,0},
+                    { -shxy,1,0,0},
                     { 0,0,1,0},
                     { 0,0,0,1}
             };
