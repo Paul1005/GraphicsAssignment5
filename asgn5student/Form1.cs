@@ -638,10 +638,11 @@ namespace asgn5v1
             double[,] scale =
             {
                     { 1,0,0,0},
-                    { -shxy,1,0,0},
+                    { shxy,1,0,0},
                     { 0,0,1,0},
                     { 0,0,0,1}
             };
+            center[0] += (shxy * center[1]);
             ctrans = matrixMultiplication(ctrans, scale, 4, 4);
         }
         private double[] FindCenter(MinMax minMax)
