@@ -60,6 +60,10 @@ namespace asgn5v1
         double[] center;
         double[] origcenter = new double[3];
         double[,] origtrans = new double[4, 4];
+
+        bool continuousRotateX = false;
+        bool continuousRotateY = false;
+        bool continuousRotateZ = false;
         public Transformer()
         {
             //
@@ -619,8 +623,8 @@ namespace asgn5v1
         {
             double[,] scale =
             {
-                    { 1,shxy,0,0},
-                    { 0,1,0,0},
+                    { 1,0,0,0},
+                    { shxy,1,0,0},
                     { 0,0,1,0},
                     { 0,0,0,1}
             };
@@ -813,25 +817,22 @@ namespace asgn5v1
 
             if (e.Button == shearleftbtn)
             {
+                MinMax minMax = findMinMax(scrnpts);
+                translate(0, -minMax.maxY, 0);
 
-                double[] currentCenter = { center[0], center[1], center[2] };
-                translate(-center[0], -center[1], -center[2]);
-
-                Shear(-0.1);
-                translate(currentCenter[0], currentCenter[1], currentCenter[2]);
-                Refresh();
+                Shear(0.1);
+                translate(0, minMax.maxY, 0);
                 Refresh();
             }
 
             if (e.Button == shearrightbtn)
             {
 
-                double[] currentCenter = { center[0], center[1], center[2] };
-                translate(-center[0], -center[1], -center[2]);
+                MinMax minMax = findMinMax(scrnpts);
+                translate(0, -minMax.maxY, 0);
 
-                Shear(0.1);
-                translate(currentCenter[0], currentCenter[1], currentCenter[2]);
-                Refresh();
+                Shear(-0.1);
+                translate(0, minMax.maxY, 0);
                 Refresh();
             }
 
