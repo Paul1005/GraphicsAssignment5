@@ -7,6 +7,7 @@ using System.Data;
 using System.IO;
 using System.Text;
 using System.Diagnostics;
+using System.Timers;
 
 namespace asgn5v1
 {
@@ -18,6 +19,12 @@ namespace asgn5v1
         private System.ComponentModel.IContainer components;
         //private bool GetNewData();
 
+        System.Timers.Timer rotRptX = new System.Timers.Timer(600);
+        System.Timers.Timer rotRptY = new System.Timers.Timer(600);
+        System.Timers.Timer rotRptZ = new System.Timers.Timer(600);
+
+        private delegate void delegateMethod();
+
         // basic data for Transformer
 
         int numpts = 0;
@@ -26,29 +33,29 @@ namespace asgn5v1
         double[,] vertices;
         double[,] scrnpts;
         double[,] ctrans = new double[4, 4];  //your main transformation matrix
-        private System.Windows.Forms.ImageList tbimages;
-        private System.Windows.Forms.ToolBar toolBar1;
-        private System.Windows.Forms.ToolBarButton transleftbtn;
-        private System.Windows.Forms.ToolBarButton transrightbtn;
-        private System.Windows.Forms.ToolBarButton transupbtn;
-        private System.Windows.Forms.ToolBarButton transdownbtn;
-        private System.Windows.Forms.ToolBarButton toolBarButton1;
-        private System.Windows.Forms.ToolBarButton scaleupbtn;
-        private System.Windows.Forms.ToolBarButton scaledownbtn;
-        private System.Windows.Forms.ToolBarButton toolBarButton2;
-        private System.Windows.Forms.ToolBarButton rotxby1btn;
-        private System.Windows.Forms.ToolBarButton rotyby1btn;
-        private System.Windows.Forms.ToolBarButton rotzby1btn;
-        private System.Windows.Forms.ToolBarButton toolBarButton3;
-        private System.Windows.Forms.ToolBarButton rotxbtn;
-        private System.Windows.Forms.ToolBarButton rotybtn;
-        private System.Windows.Forms.ToolBarButton rotzbtn;
-        private System.Windows.Forms.ToolBarButton toolBarButton4;
-        private System.Windows.Forms.ToolBarButton shearrightbtn;
-        private System.Windows.Forms.ToolBarButton shearleftbtn;
-        private System.Windows.Forms.ToolBarButton toolBarButton5;
-        private System.Windows.Forms.ToolBarButton resetbtn;
-        private System.Windows.Forms.ToolBarButton exitbtn;
+        private ImageList tbimages;
+        private ToolBar toolBar1;
+        private ToolBarButton transleftbtn;
+        private ToolBarButton transrightbtn;
+        private ToolBarButton transupbtn;
+        private ToolBarButton transdownbtn;
+        private ToolBarButton toolBarButton1;
+        private ToolBarButton scaleupbtn;
+        private ToolBarButton scaledownbtn;
+        private ToolBarButton toolBarButton2;
+        private ToolBarButton rotxby1btn;
+        private ToolBarButton rotyby1btn;
+        private ToolBarButton rotzby1btn;
+        private ToolBarButton toolBarButton3;
+        private ToolBarButton rotxbtn;
+        private ToolBarButton rotybtn;
+        private ToolBarButton rotzbtn;
+        private ToolBarButton toolBarButton4;
+        private ToolBarButton shearrightbtn;
+        private ToolBarButton shearleftbtn;
+        private ToolBarButton toolBarButton5;
+        private ToolBarButton resetbtn;
+        private ToolBarButton exitbtn;
         int[,] lines;
         double[] center;
         double[] origcenter = new double[3];
@@ -80,7 +87,34 @@ namespace asgn5v1
                 new EventHandler(MenuAboutOnClick));
             Menu = new MainMenu(new MenuItem[] { miFile, miAbout });
 
+            rotRptX.Elapsed += (source, args) =>
+            {
+                double[] currentCenter = { center[0], center[1], center[2] };
+                translate(-center[0], -center[1], -center[2]);
+                RotateX(0.05);
+                translate(currentCenter[0], currentCenter[1], currentCenter[2]);
+                Invoke(new delegateMethod(Refresh));
+            };
+            rotRptY.Elapsed += (source, args) =>
+            {
+                double[] currentCenter = { center[0], center[1], center[2] };
+                translate(-center[0], -center[1], -center[2]);
+                RotateY(0.05);
+                translate(currentCenter[0], currentCenter[1], currentCenter[2]);
+                Invoke(new delegateMethod(Refresh));
+            };
+            rotRptZ.Elapsed += (source, args) =>
+            {
+                double[] currentCenter = { center[0], center[1], center[2] };
+                translate(-center[0], -center[1], -center[2]);
+                RotateZ(0.05);
+                translate(currentCenter[0], currentCenter[1], currentCenter[2]);
+                Invoke(new delegateMethod(Refresh));
+            };
 
+            rotRptX.AutoReset = true;
+            rotRptY.AutoReset = true;
+            rotRptZ.AutoReset = true;
         }
 
         /// <summary>
@@ -575,7 +609,7 @@ namespace asgn5v1
             {
                     { Math.Cos(rotateZ),Math.Sin(rotateZ),0,0},
                     { -Math.Sin(rotateZ),Math.Cos(rotateZ),0,0},
-                    { 0,0,0,0},
+                    { 0,0,1,0},
                     { 0,0,0,1}
             };
             ctrans = matrixMultiplication(ctrans, scale, 4, 4);
@@ -744,37 +778,36 @@ namespace asgn5v1
 
             if (e.Button == rotxbtn)
             {
-
-                while (true)
+                if (!rotRptX.Enabled)
                 {
-                    double[] currentCenter = { center[0], center[1], center[2] };
-                    translate(-center[0], -center[1], -center[2]);
-                    RotateX(0.05);
-                    translate(currentCenter[0], currentCenter[1], currentCenter[2]);
-                    Refresh();
+                    rotRptX.Start();
+                }
+                else
+                {
+                    rotRptX.Stop();
                 }
             }
             if (e.Button == rotybtn)
             {
-                while (true)
+                if (!rotRptY.Enabled)
                 {
-                    double[] currentCenter = { center[0], center[1], center[2] };
-                    translate(-center[0], -center[1], -center[2]);
-                    RotateY(0.05);
-                    translate(currentCenter[0], currentCenter[1], currentCenter[2]);
-                    Refresh();
+                    rotRptY.Start();
+                }
+                else
+                {
+                    rotRptY.Stop();
                 }
             }
 
             if (e.Button == rotzbtn)
             {
-                while (true)
+                if (!rotRptZ.Enabled)
                 {
-                    double[] currentCenter = { center[0], center[1], center[2] };
-                    translate(-center[0], -center[1], -center[2]);
-                    RotateZ(0.05);
-                    translate(currentCenter[0], currentCenter[1], currentCenter[2]);
-                    Refresh();
+                    rotRptZ.Start();
+                }
+                else
+                {
+                    rotRptZ.Stop();
                 }
             }
 
